@@ -78,7 +78,7 @@ again, so pacing stays exactly what you set in the campaign Scheduler UI
    `git status` before committing. Then create an empty repo on GitHub and:
 
    ```bash
-   git remote add origin https://github.com/<you>/wolfcanvas.git
+   git remote add origin https://github.com/geoffreygodfrey/wolfcanvas-sms.git
    git branch -M main
    git push -u origin main
    ```
