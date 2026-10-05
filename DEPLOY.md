@@ -123,6 +123,38 @@ again, so pacing stays exactly what you set in the campaign Scheduler UI
    `CNAME` record Vercel gives you at your registrar (Cloudflare/Namecheap).
    Use this domain for phone-browser login.
 
+## 2b. Telnyx — number, profile, webhook
+
+Nothing can send until three things are linked: **number → messaging profile →
+webhook URL**. All configured in Mission Control (https://portal.telnyx.com):
+
+1. **Get a number** (skip if you already own one):
+   - *Real-Time Communication → Numbers → Buy Numbers* (or the *Search & Buy
+     Numbers* button on the *My Numbers* page).
+   - Country **Canada** · Features **SMS** (not every number has SMS) · Type
+     **Local**. Canadian long codes are messaging-ready immediately — no 10DLC
+     registration, which is why this stack works for a Canada-first client base.
+   - Search by area code or city → *Add to Cart* → *Place Order*.
+     Canadian local numbers start around $1/month.
+2. **Copy the number in E.164** from *Numbers → My Numbers*: `+1` + 10 digits,
+   no spaces or dashes — e.g. `+14035551234`. That exact string is your
+   `TELNYX_FROM_NUMBER`.
+3. **Create a messaging profile** — *Messaging → Messaging Profiles → Add*.
+   Copy its UUID → that's `TELNYX_DEFAULT_PROFILE_ID`. (A campaign's Scheduler
+   panel can override it with a per-campaign profile.)
+4. **Set the profile's Webhook URL** — this is the only path for replies, STOP
+   opt-outs, and delivery receipts back into the app:
+   `https://<your-domain>/api/webhooks/telnyx`
+   (switch it to your custom domain once §2 step 6 is done.) Without it you can
+   still *send*, but replies never appear, STOP doesn't register, and
+   delivered/failed statuses never update.
+5. **Assign the number to that profile** (*My Numbers* → the number → routing /
+   messaging profile). A number with no profile cannot send at all.
+
+Sanity check for the whole chain: profile page shows a webhook URL, number
+appears in the profile's number list, `TELNYX_FROM_NUMBER` matches that number
+exactly (E.164).
+
 ## 3. cron-job.org — the ticker
 
 The app has **no** built-in server-side cron: serverless boxes sleep between
@@ -212,6 +244,9 @@ ages.
       burst. (Quick check: the URL contains `:5432`.)
 - [ ] All existing `unknown`-consent contacts bulk-marked **Opted in** (Contacts
       toolbar) so sends aren't silently blocked (`skipped — no consent`).
+- [ ] Telnyx number **assigned to a messaging profile**, and that profile's
+      webhook URL is `https://<domain>/api/webhooks/telnyx` (else no replies,
+      no STOPs, no delivery statuses).
 - [ ] Real Telnyx numbers + messaging profiles attached to campaigns.
 - [ ] `AUTH_SECRET` is 24+ characters and `CRON_SECRET` is a *different* value.
 - [ ] `LLM_MODEL=qwen/qwen3.8-27b` — the old `qwen3.6` ID was shut down
