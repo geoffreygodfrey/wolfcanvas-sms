@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  border-color: theme("colors.line");
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: theme("colors.ink");
+  background:
+    radial-gradient(900px 480px at 85% -8%, rgba(15, 122, 120, 0.07), transparent 60%),
+    radial-gradient(760px 420px at -8% 0%, rgba(230, 222, 210, 0.5), transparent 55%),
+    theme("colors.paper");
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* faint paper grain over the whole app */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: rgba(15, 122, 120, 0.22);
+  color: theme("colors.ink");
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: theme("colors.line");
+  border: 3px solid theme("colors.paper");
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: theme("colors.muted");
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-muted;
+  }
+  .page-title {
+    @apply font-display text-3xl font-semibold tracking-tight text-ink;
+  }
+  .card {
+    @apply rounded-lg border border-line bg-white shadow-card;
+  }
+  .btn-primary {
+    @apply rounded-md bg-signal px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-signal-dark disabled:opacity-60;
+  }
+  .btn-ghost {
+    @apply rounded-md px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:bg-line/60;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal {
+  animation: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.reveal-d1 {
+  animation-delay: 0.06s;
+}
+.reveal-d2 {
+  animation-delay: 0.12s;
+}
+.reveal-d3 {
+  animation-delay: 0.18s;
+}
+
+.modal-in {
+  animation: scale-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-d1,
+  .reveal-d2,
+  .reveal-d3,
+  .modal-in {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

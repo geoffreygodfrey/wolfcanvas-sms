@@ -1,0 +1,31 @@
+{
+  "name": "sms-outreach-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "scheduler": "node --env-file=.env --import tsx scripts/scheduler.ts",
+    "backup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup.ps1",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "jose": "^6.2.9",
+    "next": "^15.1.0",
+    "pg": "^8.13.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.12",
+    "typescript": "^5.7.2"
+  }
+}

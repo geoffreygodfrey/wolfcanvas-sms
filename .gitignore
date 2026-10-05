@@ -1,0 +1,35 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+/build
+
+# local env files — NEVER commit secrets (DATABASE_URL, AUTH_SECRET, API keys)
+.env
+.env.local
+.env.*.local
+
+# database dumps — contain password hashes and full customer data
+/backups/
+
+# vercel
+.vercel
+
+# typescript / build artifacts
+*.tsbuildinfo
+next-env.d.ts
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# scratch scripts (temporary smoke tests)
+scripts/_*.ts
+
+# misc
+.DS_Store
+Thumbs.db
