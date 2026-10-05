@@ -264,3 +264,29 @@ SELECT
 FROM campaign_variants v
 LEFT JOIN messages m ON m.variant_id = v.id
 GROUP BY v.id, v.campaign_id, v.label;
+
+-- ============================================================
+-- Row Level Security — deny-by-default on Supabase's public REST API
+-- ============================================================
+-- The app talks to Postgres only through the secret DATABASE_URL (Session
+-- pooler) as `postgres`, which owns these tables and therefore bypasses RLS.
+-- Enabling RLS with zero policies locks out the PostgREST layer and the
+-- "public by design" anon key: if that key ever leaks, it reads nothing.
+-- (The Supabase dashboard and SQL editor use service_role/postgres — also
+-- unaffected.)
+ALTER TABLE public.users                      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contacts                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_groups             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_group_members      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaigns                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.send_pace                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.auth_attempts              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pump_health                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign_scenarios         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign_variants          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign_contacts          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campaign_follow_ups        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversations              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversation_messages      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.appointments               ENABLE ROW LEVEL SECURITY;
