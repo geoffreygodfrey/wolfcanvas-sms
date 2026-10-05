@@ -17,6 +17,10 @@ export interface SmsOptions {
  * Send an SMS via Telnyx. If TELNYX_API_KEY is unset (or there is no profile or
  * from-number configured), logs the message to the console and returns a local
  * id so the rest of the flow still works in development.
+ *
+ * In production that fallback is refused: a console send would mark messages
+ * `sent` while nothing actually leaves the app. Callers catch the throw and
+ * record the message as `failed` with this error text.
  */
 export async function sendSms(to: string, text: string, opts: SmsOptions = {}): Promise<SendSmsResult> {
   const apiKey = process.env.TELNYX_API_KEY?.trim();
@@ -25,6 +29,14 @@ export async function sendSms(to: string, text: string, opts: SmsOptions = {}): 
     opts.profileId?.trim() || process.env.TELNYX_DEFAULT_PROFILE_ID?.trim() || "";
 
   if (!apiKey || (!profileId && !fromNumber)) {
+    if (process.env.NODE_ENV === "production") {
+      const missing = !apiKey
+        ? "TELNYX_API_KEY"
+        : "TELNYX_DEFAULT_PROFILE_ID / TELNYX_FROM_NUMBER";
+      throw new Error(
+        `Telnyx not configured in production (${missing} missing) — refusing to mark a message sent without sending it`
+      );
+    }
     console.log(
       `[telnyx:console] to=${to} from=${fromNumber || "(unset)"} profile=${profileId || "(unset)"} text=${text}`
     );

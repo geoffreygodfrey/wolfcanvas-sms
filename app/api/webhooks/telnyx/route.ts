@@ -11,11 +11,39 @@ const STOP_RE = /^\s*(stop|stopall|unsubscribe|cancel|quit|opt\s*out|arrêt|no\s
 const CONFIRMATION_TEXT =
   "You've been unsubscribed from SMS updates. You won't receive any more texts from us. Reply HELP if this was a mistake.";
 
-const DELIVERY_STATUS: Record<string, string> = {
-  "message.sent": "sent",
-  "message.delivered": "delivered",
-  "message.failed": "failed",
-};
+/** Terminal states that mean the message never reached the handset. */
+const UNDELIVERED = new Set(["failed", "expired", "cancelled"]);
+
+/**
+ * Map a delivery-status event to our messages.status + error_detail.
+ * Current Telnyx sends terminal states as `message.finalized` carrying
+ * payload.status (delivered | failed | expired | cancelled | …); older
+ * payloads used message.sent / message.delivered / message.failed directly.
+ * Returns null when the event doesn't describe a status change.
+ */
+function statusUpdateFromEvent(
+  eventType: string,
+  payload: any
+): { status: string; error: string | null } | null {
+  let status: string;
+  if (eventType === "message.finalized") {
+    status = String(payload?.status ?? "");
+  } else if (
+    eventType === "message.sent" ||
+    eventType === "message.delivered" ||
+    eventType === "message.failed"
+  ) {
+    status = eventType.slice("message.".length);
+  } else {
+    return null;
+  }
+
+  if (status === "sent" || status === "delivered") return { status, error: null };
+  if (UNDELIVERED.has(status)) {
+    return { status: "failed", error: payload?.errors?.[0]?.title ?? `Delivery ${status}` };
+  }
+  return null;
+}
 
 function inboundNumber(payload: any): string | null {
   const from = payload?.from;
@@ -33,18 +61,22 @@ async function sendAgentMessage(opts: {
   body: string;
 }) {
   let telnyxId: string | null = null;
+  let status = "sent";
+  let errorDetail: string | null = null;
   try {
     const sent = await sendSms(opts.phone, opts.body);
     telnyxId = sent.id ?? null;
     await markPaced();
   } catch (err) {
+    status = "failed";
+    errorDetail = err instanceof Error ? err.message : String(err);
     console.warn("[agent] failed to send reply:", err);
   }
   const outbound = await pool.query(
-    `INSERT INTO messages (contact_id, campaign_id, direction, body, telnyx_message_id, status)
-     VALUES ($1, $2, 'outbound', $3, $4, 'sent')
+    `INSERT INTO messages (contact_id, campaign_id, direction, body, telnyx_message_id, status, error_detail)
+     VALUES ($1, $2, 'outbound', $3, $4, $5, $6)
      RETURNING id`,
-    [opts.contactId, opts.campaignId, opts.body, telnyxId]
+    [opts.contactId, opts.campaignId, opts.body, telnyxId, status, errorDetail]
   );
   await pool.query(
     `INSERT INTO conversation_messages (conversation_id, message_id, role, content)
@@ -250,14 +282,12 @@ export async function POST(req: NextRequest) {
   const eventType = data.event_type;
   const payload = data.payload ?? {};
 
-  // Delivery receipts: message.sent / message.delivered / message.failed
-  if (eventType in DELIVERY_STATUS) {
-    const status = DELIVERY_STATUS[eventType];
-    const errorDetail = eventType === "message.failed" ? (payload.errors?.[0]?.title ?? "Delivery failed") : null;
-
+  // Delivery receipts: message.finalized (current) / message.sent / legacy names.
+  const statusUpdate = statusUpdateFromEvent(eventType, payload);
+  if (statusUpdate) {
     await pool.query(
       `UPDATE messages SET status = $1, error_detail = $2 WHERE telnyx_message_id = $3`,
-      [status, errorDetail, payload.id ?? null]
+      [statusUpdate.status, statusUpdate.error, payload.id ?? null]
     );
     return NextResponse.json({ ok: true });
   }
