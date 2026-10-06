@@ -234,7 +234,13 @@ CREATE INDEX idx_appointments_conversation ON appointments(conversation_id);
 -- ============================================================
 
 -- Per-campaign summary: delivery rate, reply rate, opt-out rate, qualified rate, booked count
-CREATE VIEW campaign_stats AS
+-- WITH (security_invoker = on): Postgres defaults views to SECURITY DEFINER
+-- (owner's rights, bypasses RLS), which Supabase's Security Advisor flags as
+-- ERROR 0010. Invoker mode keeps the app working — it queries as `postgres`,
+-- the table owner — while the public REST layer gets nothing.
+CREATE VIEW campaign_stats
+WITH (security_invoker = on)
+AS
 SELECT
   c.id                                                            AS campaign_id,
   c.name                                                          AS campaign_name,
@@ -253,7 +259,9 @@ LEFT JOIN appointments a ON a.conversation_id = conv.id
 GROUP BY c.id, c.name;
 
 -- Per-variant breakdown, for when you're comparing A vs B manually
-CREATE VIEW variant_stats AS
+CREATE VIEW variant_stats
+WITH (security_invoker = on)
+AS
 SELECT
   v.id                                                               AS variant_id,
   v.campaign_id,

@@ -242,11 +242,12 @@ ages.
 - [ ] `DATABASE_URL` uses the **Session pooler (5432)**, not the Transaction
       pooler (6543) — otherwise the pump's advisory lock breaks and sends can
       burst. (Quick check: the URL contains `:5432`.)
-- [ ] Supabase **Database Linter shows 0 errors**: RLS enabled on every table
-      (zero policies means the public REST API and anon key read nothing — the
-      app connects as `postgres`, the table owner, which bypasses RLS), and the
-      two stats views created **without** `SECURITY DEFINER`. `schema.sql`
-      already ends with the `ALTER TABLE … ENABLE ROW LEVEL SECURITY` block.
+- [ ] Supabase **Security Advisor / Database Linter shows 0 errors**: RLS enabled
+      on every table (zero policies means the public REST API and anon key read
+      nothing — the app connects as `postgres`, the table owner, which bypasses
+      RLS), and both stats views created **with `WITH (security_invoker = on)`**
+      — Postgres defaults views to SECURITY DEFINER, which the advisor flags as
+      ERROR 0010. `schema.sql` already covers both.
 - [ ] All existing `unknown`-consent contacts bulk-marked **Opted in** (Contacts
       toolbar) so sends aren't silently blocked (`skipped — no consent`).
 - [ ] Telnyx number **assigned to a messaging profile**, and that profile's
