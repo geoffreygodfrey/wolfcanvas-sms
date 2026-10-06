@@ -7,9 +7,9 @@ export interface SendSmsResult {
 }
 
 export interface SmsOptions {
-  /** A Telnyx messaging profile (contains one or more numbers). When given,
-   *  Telnyx picks which number in the profile handles the send. Falls back to
-   *  TELNYX_DEFAULT_PROFILE_ID, then TELNYX_FROM_NUMBER. */
+  /** A Telnyx messaging profile to tie the send to. Falls back to
+   *  TELNYX_DEFAULT_PROFILE_ID when omitted. The sending number itself always
+   *  comes from TELNYX_FROM_NUMBER. */
   profileId?: string | null;
 }
 
@@ -43,14 +43,16 @@ export async function sendSms(to: string, text: string, opts: SmsOptions = {}): 
     return { id: `local-${Date.now()}`, mode: "console" };
   }
 
-  // Profile-based sends go through the messaging profile endpoint; Telnyx picks
-  // a number from the profile automatically. Legacy single-number sends use /v2/messages.
-  const url = profileId
-    ? `${TELNYX_PROFILES_URL}/${encodeURIComponent(profileId)}/messages`
-    : TELNYX_API_URL;
-  const body = profileId ? { to, text } : { from: fromNumber, to, text };
+  // Every send goes through POST /v2/messages — Telnyx has no profile-scoped
+  // send endpoint (asking for /v2/messaging_profiles/{id}/messages 404s with
+  // code 10005). `from` picks the sending number; the profile id rides along
+  // as messaging_profile_id so the send stays tied to the campaign's profile
+  // (delivery webhooks resolve through the number's own profile association).
+  const body: Record<string, string> = { to, text };
+  if (fromNumber) body.from = fromNumber;
+  if (profileId) body.messaging_profile_id = profileId;
 
-  const res = await fetch(url, {
+  const res = await fetch(TELNYX_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
