@@ -1,4 +1,5 @@
 import { pool } from "@/lib/db";
+import { E164_RE } from "@/lib/phone";
 
 const KNOWN_HEADERS = ["name", "phone", "email", "consent_status", "opted_out"];
 const MAX_ROWS = 5000;
@@ -59,7 +60,7 @@ function parseCsv(text: string): string[][] {
 
 function normalizePhone(raw: string): string | null {
   const cleaned = raw.replace(/[\s\-().]/g, "").trim();
-  return /^\+?\d{7,16}$/.test(cleaned) ? cleaned : null;
+  return E164_RE.test(cleaned) ? cleaned : null;
 }
 
 /** Parses + inserts a CSV of contacts. Returns a result summary, or throws an
@@ -120,7 +121,10 @@ export async function importContactsCsv(
       continue;
     }
     if (!phone) {
-      errors.push({ row: rowNum, reason: `Invalid phone "${row[col.phone] ?? ""}".` });
+      errors.push({
+        row: rowNum,
+        reason: `Invalid phone "${row[col.phone] ?? ""}" — must be E.164, e.g. +14165551234.`,
+      });
       continue;
     }
 

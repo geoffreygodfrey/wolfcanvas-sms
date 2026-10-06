@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { PHONE_E164_ERROR, toE164 } from "@/lib/phone";
 
 const CONTACT_SELECT = `SELECT c.id, c.name, c.email, c.phone, c.consent_status, c.opted_out, c.tags, c.created_at,
   COALESCE((
@@ -23,6 +24,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { name, email, phone } = body;
   const consent = body.consent_status;
 
+  const phoneE164 = toE164(phone);
+  if (!phoneE164) {
+    return NextResponse.json({ error: PHONE_E164_ERROR }, { status: 400 });
+  }
+
   try {
     const result = await pool.query(
       `UPDATE contacts SET name = $1, email = $2, phone = $3,
@@ -37,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
          updated_at = now()
        WHERE id = $5
        RETURNING id, name, email, phone, consent_status, opted_out, created_at`,
-      [name, email || null, phone, consent || null, id]
+      [name, email || null, phoneE164, consent || null, id]
     );
 
     if (result.rowCount === 0) {

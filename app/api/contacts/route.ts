@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { PHONE_E164_ERROR, toE164 } from "@/lib/phone";
 
 const CONTACT_SELECT = `SELECT c.id, c.name, c.email, c.phone, c.consent_status, c.opted_out, c.tags, c.created_at,
   COALESCE((
@@ -32,12 +33,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Name and phone are required." }, { status: 400 });
   }
 
+  const phoneE164 = toE164(phone);
+  if (!phoneE164) {
+    return NextResponse.json({ error: PHONE_E164_ERROR }, { status: 400 });
+  }
+
   try {
     const result = await pool.query(
       `INSERT INTO contacts (name, email, phone)
        VALUES ($1, $2, $3)
        RETURNING id, name, email, phone, consent_status, opted_out, created_at`,
-      [name, email || null, phone]
+      [name, email || null, phoneE164]
     );
     return NextResponse.json({ ...result.rows[0], groups: [] }, { status: 201 });
   } catch (err: any) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { PHONE_E164_ERROR, toE164 } from "@/lib/phone";
 
 const CONTACT_SELECT = `SELECT c.id, c.name, c.email, c.phone, c.consent_status, c.opted_out, c.tags, c.created_at,
   COALESCE((
@@ -58,11 +59,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const contact = body?.contact;
   if (contact && typeof contact.name === "string" && typeof contact.phone === "string") {
+    const phoneE164 = toE164(contact.phone);
+    if (!phoneE164) {
+      return NextResponse.json({ error: PHONE_E164_ERROR }, { status: 400 });
+    }
     try {
       const created = await pool.query(
         `INSERT INTO contacts (name, email, phone)
          VALUES ($1, $2, $3) RETURNING id`,
-        [contact.name.trim(), contact.email?.trim() || null, contact.phone.trim()]
+        [contact.name.trim(), contact.email?.trim() || null, phoneE164]
       );
       await pool.query(
         `INSERT INTO contact_group_members (group_id, contact_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
