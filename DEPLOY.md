@@ -163,7 +163,10 @@ requests. You need an external caller hitting the pump every minute.
 1. Create an account at https://cron-job.org (free). You need **exactly one
    job, forever** — see the note below.
 2. **New job:**
-   - URL: `https://<your-project>.vercel.app/api/queue/pump`
+   - URL: `https://<your-domain>/api/queue/pump` (the custom domain — set it
+     after DNS is mapped so the job never needs editing; a temporary
+     `https://<your-project>.vercel.app/api/queue/pump` works too, but then you
+     must update this job *and* the Telnyx webhook URL when the domain lands)
    - Method: `POST`
    - Headers: `Authorization: Bearer <CRON_SECRET>` (the same value you set in
      Vercel)
