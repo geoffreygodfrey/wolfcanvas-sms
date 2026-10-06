@@ -305,7 +305,7 @@ export async function pumpOnce(opts: PumpOptions = {}): Promise<PumpResult> {
       try {
         const result = await sendSms(row.phone, row.body, { profileId: row.telnyx_profile_id });
         await client.query(
-          `UPDATE messages SET status = 'sent', telnyx_message_id = $1, error_detail = NULL WHERE id = $2`,
+          `UPDATE messages SET status = 'sent', telnyx_message_id = $1, error_detail = NULL, sent_at = now() WHERE id = $2`,
           [result.id, row.id]
         );
         sent++;
@@ -315,7 +315,7 @@ export async function pumpOnce(opts: PumpOptions = {}): Promise<PumpResult> {
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
         await client.query(
-          `UPDATE messages SET status = 'failed', error_detail = $1 WHERE id = $2`,
+          `UPDATE messages SET status = 'failed', error_detail = $1, sent_at = now() WHERE id = $2`,
           [detail, row.id]
         );
       }

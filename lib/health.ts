@@ -82,10 +82,10 @@ async function maybeAlert(db: Pool | PoolClient): Promise<void> {
   const fail = await db.query(
     `SELECT
        count(*) FILTER (WHERE status = 'failed' AND error_detail NOT LIKE 'skipped%')::int AS failed,
-       count(*)::int AS total
+       count(*) FILTER (WHERE error_detail IS NULL OR error_detail NOT LIKE 'skipped%')::int AS total
      FROM messages
      WHERE direction = 'outbound'
-       AND created_at >= now() - make_interval(hours => $1)
+       AND sent_at >= now() - make_interval(hours => $1)
        AND status IN ('sent','delivered','failed')`,
     [FAILURE_WINDOW_HOURS]
   );
@@ -101,7 +101,7 @@ async function maybeAlert(db: Pool | PoolClient): Promise<void> {
        JOIN campaigns cm ON cm.id = m.campaign_id
        WHERE m.direction = 'outbound' AND m.status = 'failed'
          AND NOT (m.error_detail LIKE 'skipped%')
-         AND m.created_at >= now() - make_interval(hours => $1)
+         AND m.sent_at >= now() - make_interval(hours => $1)
        LIMIT 6`,
       [FAILURE_WINDOW_HOURS]
     );

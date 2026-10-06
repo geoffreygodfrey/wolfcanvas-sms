@@ -177,7 +177,10 @@ CREATE TABLE messages (
   status             TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'sent', 'delivered', 'failed', 'received')),
   error_detail       TEXT,
   send_at            TIMESTAMPTZ,   -- when a queued outbound message is allowed to go out
-  sent_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+  sent_at            TIMESTAMPTZ NOT NULL DEFAULT now()   -- actual send/attempt time: the pump stamps
+                                                          -- now() when it sends or fails a row (the
+                                                          -- insert-time default covers 1:1 manual sends).
+                                                          -- Drives the daily cap, failure window, ordering.
 );
 
 CREATE INDEX idx_messages_campaign ON messages(campaign_id);
