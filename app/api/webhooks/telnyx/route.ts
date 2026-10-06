@@ -27,7 +27,11 @@ function statusUpdateFromEvent(
 ): { status: string; error: string | null } | null {
   let status: string;
   if (eventType === "message.finalized") {
-    status = String(payload?.status ?? "");
+    // Real finalized payloads are the message record itself and carry no
+    // top-level `status` — the terminal state sits per-recipient at
+    // to[].status ("delivered" | "failed" | …). payload.status stays as a
+    // fallback for payloads that do include it.
+    status = String(payload?.status ?? payload?.to?.[0]?.status ?? "");
   } else if (
     eventType === "message.sent" ||
     eventType === "message.delivered" ||
